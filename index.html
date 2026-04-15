@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Novel Writer</title>
+  <title>Novel Writer Studio</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -12,37 +12,55 @@
       display: flex;
       color: #222;
     }
-    
-    #lineSpacing {
-        padding: 4px 6px;
-        font-size: 13px;
+
+    /* Project manager */
+    #projectManager {
+      padding: 20px;
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    #projectManager h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    #projectList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+    #projectList li {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    #projectList li:last-child {
+      border-bottom: none;
+    }
+    #projectList li:hover {
+      background: #f3f4ff;
+    }
+    #newProjectName {
+      padding: 4px 6px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      width: 60%;
+      margin-right: 6px;
     }
 
-    #formatToolbar {
-        display: flex;
-        gap: 8px;
-        padding: 8px 12px;
-        border-bottom: 1px solid #ddd;
-        background: #f3f3f3;
+    /* App layout */
+    #app {
+      flex: 1;
+      display: none;
     }
-
-    #formatToolbar select,
-    #formatToolbar button {
-        padding: 4px 6px;
-        font-size: 13px;
-    }
-
-    #formatToolbar button {
-        cursor: pointer;
-        border: 1px solid #ccc;
-        background: white;
-        border-radius: 4px;
-    }
-
-    #formatToolbar button:hover {
-        background: #e8e8e8;
-    }
-
     #sidebar {
       width: 260px;
       border-right: 1px solid #ddd;
@@ -179,6 +197,35 @@
       border: 1px solid #ccc;
       font-size: 14px;
     }
+
+    /* Formatting toolbar */
+    #formatToolbar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #ddd;
+      background: #f3f3f3;
+      align-items: center;
+    }
+    #formatToolbar select,
+    #formatToolbar button {
+      padding: 4px 6px;
+      font-size: 13px;
+    }
+    #formatToolbar button {
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 4px;
+    }
+    #formatToolbar button:hover {
+      background: #e8e8e8;
+    }
+    #lineSpacing {
+      padding: 4px 6px;
+      font-size: 13px;
+    }
+
     #textEditor, #charactersEditor, #notesEditor {
       flex: 1;
       width: 100%;
@@ -210,89 +257,104 @@
       border-radius: 4px;
       border: 1px solid #ccc;
       font-size: 13px;
-
     }
   </style>
 </head>
 <body>
-  <div id="sidebar">
-    <div>
-      <h1>Novel Writer</h1>
-      <input id="projectTitle" placeholder="Untitled Project" />
-    </div>
+  <!-- Project manager (multiple books) -->
+  <div id="projectManager" style="display:none;">
+    <h1>Your Books</h1>
+    <ul id="projectList"></ul>
 
-    <div class="section">
-      <h2>Chapters</h2>
-      <ul id="chaptersList"></ul>
-      <div style="margin-top: 6px; display: flex; gap: 6px;">
-        <button id="addChapterBtn" class="primary small">+ Chapter</button>
-        <button id="deleteChapterBtn" class="small">Delete</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Story Notes</h2>
-      <div id="meta">
-        <textarea id="storyPremise" placeholder="Premise / logline"></textarea>
-        <textarea id="storySynopsis" placeholder="Short synopsis"></textarea>
-      </div>
+    <div style="margin-top:12px;">
+      <input id="newProjectName" placeholder="New book title" />
+      <button id="createProjectBtn">Create Book</button>
     </div>
   </div>
 
-  <div id="main">
-    <div id="tabs">
-      <div class="tab active" data-tab="manuscript">Manuscript</div>
-      <div class="tab" data-tab="characters">Characters</div>
-      <div class="tab" data-tab="notes">Notes</div>
+  <!-- Main app (single book at a time) -->
+  <div id="app" style="display:none;">
+    <div id="sidebar">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="margin:0;">Novel Writer</h1>
+        <button id="backToMenuBtn" class="small">Menu</button>
+      </div>
+
+      <input id="projectTitle" placeholder="Untitled Project" />
+
+      <div class="section">
+        <h2>Chapters</h2>
+        <ul id="chaptersList"></ul>
+        <div style="margin-top: 6px; display: flex; gap: 6px;">
+          <button id="addChapterBtn" class="primary small">+ Chapter</button>
+          <button id="deleteChapterBtn" class="small">Delete</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Story Notes</h2>
+        <div id="meta">
+          <textarea id="storyPremise" placeholder="Premise / logline"></textarea>
+          <textarea id="storySynopsis" placeholder="Short synopsis"></textarea>
+        </div>
+      </div>
     </div>
 
-    <div id="editorArea">
-      <div id="chapterHeader">
-        <input id="chapterTitleInput" placeholder="Chapter title" />
-        <span id="chapterLabel"></span>
+    <div id="main">
+      <div id="tabs">
+        <div class="tab active" data-tab="manuscript">Manuscript</div>
+        <div class="tab" data-tab="characters">Characters</div>
+        <div class="tab" data-tab="notes">Notes</div>
       </div>
-      <textarea id="textEditor" spellcheck="true"></textarea>
-      <div id="formatToolbar">
-        <select id="fontFamily">
-            <option value="serif">Serif</option>
-            <option value="sans-serif" selected>Sans‑serif</option>
-            <option value="monospace">Monospace</option>
-        </select>
 
-        <select id="fontSize">
+      <div id="editorArea">
+        <div id="chapterHeader">
+          <input id="chapterTitleInput" placeholder="Chapter title" />
+          <span id="chapterLabel"></span>
+        </div>
+
+        <!-- Formatting toolbar -->
+        <div id="formatToolbar">
+          <select id="fontFamily">
+            <option value="serif">Serif</option>
+            <option value="sans-serif" selected>Sans-serif</option>
+            <option value="monospace">Monospace</option>
+          </select>
+
+          <select id="fontSize">
             <option value="14px">14</option>
             <option value="16px" selected>16</option>
             <option value="18px">18</option>
             <option value="20px">20</option>
             <option value="24px">24</option>
-        </select>
+          </select>
 
-        <select id="lineSpacing">
+          <select id="lineSpacing">
             <option value="1.2">1.2</option>
             <option value="1.4">1.4</option>
             <option value="1.6" selected>1.6</option>
             <option value="1.8">1.8</option>
             <option value="2.0">2.0</option>
-        </select>
+          </select>
 
-        <button data-align="left">Left</button>
-        <button data-align="center">Center</button>
-        <button data-align="right">Right</button>
-        <button data-align="justify">Justify</button>
-    </div>
+          <button data-align="left">Left</button>
+          <button data-align="center">Center</button>
+          <button data-align="right">Right</button>
+          <button data-align="justify">Justify</button>
+        </div>
 
-      <textarea id="charactersEditor" style="display:none;" placeholder="Character sheets, arcs, relationships..."></textarea>
-      <textarea id="notesEditor" style="display:none;" placeholder="Worldbuilding, loose ideas, research notes..."></textarea>
-      <div id="statusBar">
-        <span id="wordCount">0 words</span>
-        <span id="saveStatus">Saved</span>
+        <textarea id="textEditor" spellcheck="true"></textarea>
+        <textarea id="charactersEditor" style="display:none;" placeholder="Character sheets, arcs, relationships..."></textarea>
+        <textarea id="notesEditor" style="display:none;" placeholder="Worldbuilding, loose ideas, research notes..."></textarea>
+        <div id="statusBar">
+          <span id="wordCount">0 words</span>
+          <span id="saveStatus">Saved</span>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = "novelWriterProject_v1";
-
     let project = {
       title: "My Novel",
       premise: "",
@@ -301,15 +363,94 @@
       activeChapterId: null
     };
 
+    const PROJECT_INDEX_KEY = "novelWriter_projects";
+
+    function loadProjectIndex() {
+      const raw = localStorage.getItem(PROJECT_INDEX_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    function saveProjectIndex(list) {
+      localStorage.setItem(PROJECT_INDEX_KEY, JSON.stringify(list));
+    }
+
+    function showProjectManager() {
+      document.getElementById("projectManager").style.display = "block";
+      document.getElementById("app").style.display = "none";
+      renderProjectList();
+    }
+
+    function openProject(projectId) {
+      localStorage.setItem("novelWriter_activeProject", projectId);
+      document.getElementById("projectManager").style.display = "none";
+      document.getElementById("app").style.display = "flex";
+      loadProject();
+      renderSidebar();
+      renderEditor();
+    }
+
+    function renderProjectList() {
+      const list = loadProjectIndex();
+      const ul = document.getElementById("projectList");
+      ul.innerHTML = "";
+
+      list.forEach(project => {
+        const li = document.createElement("li");
+        li.textContent = project.name;
+        li.addEventListener("click", () => openProject(project.id));
+
+        li.addEventListener("contextmenu", e => {
+          e.preventDefault();
+          if (confirm(`Delete "${project.name}"?`)) {
+            deleteProject(project.id);
+          }
+        });
+
+        ul.appendChild(li);
+      });
+    }
+
+    function createProject(name) {
+      const id = "proj_" + Date.now();
+      const list = loadProjectIndex();
+
+      list.push({ id, name });
+      saveProjectIndex(list);
+
+      localStorage.setItem(id, JSON.stringify({
+        title: name,
+        premise: "",
+        synopsis: "",
+        chapters: [],
+        activeChapterId: null
+      }));
+
+      openProject(id);
+    }
+
+    function deleteProject(id) {
+      const list = loadProjectIndex().filter(p => p.id !== id);
+      saveProjectIndex(list);
+      localStorage.removeItem(id);
+      renderProjectList();
+    }
+
     function loadProject() {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const projectId = localStorage.getItem("novelWriter_activeProject");
+      const raw = localStorage.getItem(projectId);
+
       if (raw) {
-        try {
-          project = JSON.parse(raw);
-        } catch (e) {
-          console.error("Failed to parse project, using default", e);
-        }
+        project = JSON.parse(raw);
+      } else {
+        project = {
+          title: "Untitled",
+          premise: "",
+          synopsis: "",
+          chapters: [],
+          activeChapterId: null
+        };
       }
+
       if (!project.chapters || project.chapters.length === 0) {
         const first = createChapter("Chapter 1");
         project.chapters.push(first);
@@ -319,13 +460,15 @@
     }
 
     function saveProject() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+      const projectId = localStorage.getItem("novelWriter_activeProject");
+      if (!projectId) return;
+      localStorage.setItem(projectId, JSON.stringify(project));
       setSaveStatus("Saved");
     }
 
     function setSaveStatus(text) {
       const el = document.getElementById("saveStatus");
-      el.textContent = text;
+      if (el) el.textContent = text;
     }
 
     function createChapter(title) {
@@ -415,7 +558,56 @@
       notes.style.display = tabName === "notes" ? "block" : "none";
     }
 
+    function setupFormattingControls() {
+      const editor = document.getElementById("textEditor");
+
+      const savedFont = localStorage.getItem("nw_fontFamily") || "sans-serif";
+      const savedSize = localStorage.getItem("nw_fontSize") || "16px";
+      const savedAlign = localStorage.getItem("nw_textAlign") || "left";
+      const savedSpacing = localStorage.getItem("nw_lineSpacing") || "1.6";
+
+      editor.style.fontFamily = savedFont;
+      editor.style.fontSize = savedSize;
+      editor.style.textAlign = savedAlign;
+      editor.style.lineHeight = savedSpacing;
+
+      document.getElementById("fontFamily").value = savedFont;
+      document.getElementById("fontSize").value = savedSize;
+      document.getElementById("lineSpacing").value = savedSpacing;
+
+      document.getElementById("fontFamily").addEventListener("change", e => {
+        editor.style.fontFamily = e.target.value;
+        localStorage.setItem("nw_fontFamily", e.target.value);
+      });
+
+      document.getElementById("fontSize").addEventListener("change", e => {
+        editor.style.fontSize = e.target.value;
+        localStorage.setItem("nw_fontSize", e.target.value);
+      });
+
+      document.getElementById("lineSpacing").addEventListener("change", e => {
+        const spacing = e.target.value;
+        editor.style.lineHeight = spacing;
+        localStorage.setItem("nw_lineSpacing", spacing);
+      });
+
+      document.querySelectorAll("#formatToolbar button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const align = btn.dataset.align;
+          editor.style.textAlign = align;
+          localStorage.setItem("nw_textAlign", align);
+        });
+      });
+    }
+
     function setupEvents() {
+      document.getElementById("backToMenuBtn").addEventListener("click", () => {
+        // Hide the app, show the project manager
+        document.getElementById("app").style.display = "none";
+        document.getElementById("projectManager").style.display = "block";
+        renderProjectList();
+      });
+
       document.getElementById("projectTitle").addEventListener("input", (e) => {
         project.title = e.target.value;
         setSaveStatus("Unsaved…");
@@ -500,65 +692,13 @@
           switchTab(tab.dataset.tab);
         });
       });
+
+      document.getElementById("createProjectBtn").addEventListener("click", () => {
+        const name = document.getElementById("newProjectName").value.trim();
+        if (!name) return alert("Enter a book title");
+        createProject(name);
+      });
     }
-
-    function setupFormattingControls() {
-        const editor = document.getElementById("textEditor");
-
-        // Load saved formatting
-        const savedFont = localStorage.getItem("nw_fontFamily") || "sans-serif";
-        const savedSize = localStorage.getItem("nw_fontSize") || "16px";
-        const savedAlign = localStorage.getItem("nw_textAlign") || "left";
-
-        editor.style.fontFamily = savedFont;
-        editor.style.fontSize = savedSize;
-        editor.style.textAlign = savedAlign;
-
-        document.getElementById("fontFamily").value = savedFont;
-        document.getElementById("fontSize").value = savedSize;
-
-        // Font family
-        document.getElementById("fontFamily").addEventListener("change", e => {
-            editor.style.fontFamily = e.target.value;
-            localStorage.setItem("nw_fontFamily", e.target.value);
-        });
-
-        // Font size
-        document.getElementById("fontSize").addEventListener("change", e => {
-            editor.style.fontSize = e.target.value;
-            localStorage.setItem("nw_fontSize", e.target.value);
-        });
-
-        // Alignment buttons
-        document.querySelectorAll("#formatToolbar button").forEach(btn => {
-            btn.addEventListener("click", () => {
-            const align = btn.dataset.align;
-            editor.style.textAlign = align;
-            localStorage.setItem("nw_textAlign", align);
-            });
-        });
-    }
-
-    setupFormattingControls();
-
-    function setupLineSpacingControl() {
-        const editor = document.getElementById("textEditor");
-
-        // Load saved spacing
-        const savedSpacing = localStorage.getItem("nw_lineSpacing") || "1.6";
-        editor.style.lineHeight = savedSpacing;
-        document.getElementById("lineSpacing").value = savedSpacing;
-
-        // Update spacing on change
-        document.getElementById("lineSpacing").addEventListener("change", e => {
-            const spacing = e.target.value;
-            editor.style.lineHeight = spacing;
-            localStorage.setItem("nw_lineSpacing", spacing);
-        });
-    }
-
-    setupLineSpacingControl();
-
 
     let saveTimer = null;
     function debounceSave() {
@@ -568,10 +708,17 @@
       }, 600);
     }
 
-    loadProject();
+    // Init
     setupEvents();
-    renderSidebar();
-    renderEditor();
+    setupFormattingControls();
+
+    const active = localStorage.getItem("novelWriter_activeProject");
+    if (!active) {
+      showProjectManager();
+    } else {
+      openProject(active);
+    }
   </script>
 </body>
 </html>
+
