@@ -226,7 +226,7 @@
       font-size: 13px;
     }
 
-    #textEditor, #charactersEditor, #notesEditor {
+    #charactersEditor, #notesEditor {
       flex: 1;
       width: 100%;
       border: none;
@@ -235,6 +235,16 @@
       outline: none;
       line-height: 1.5;
     }
+
+    #textEditor {
+      flex: 1;
+      width: 100%;
+      padding: 10px 12px;
+      outline: none;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
     #statusBar {
       font-size: 12px;
       padding: 4px 8px;
@@ -341,9 +351,16 @@
           <button data-align="center">Center</button>
           <button data-align="right">Right</button>
           <button data-align="justify">Justify</button>
+
+          <button onclick="exec('bold')"><b>B</b></button>
+          <button onclick="exec('italic')"><i>I</i></button>
+          <button onclick="exec('underline')"><u>U</u></button>
+          <button onclick="exec('strikeThrough')"><s>S</s></button>
+
         </div>
 
-        <textarea id="textEditor" spellcheck="true"></textarea>
+       <div id="textEditor" contenteditable="true" spellcheck="true"></div>
+
         <textarea id="charactersEditor" style="display:none;" placeholder="Character sheets, arcs, relationships..."></textarea>
         <textarea id="notesEditor" style="display:none;" placeholder="Worldbuilding, loose ideas, research notes..."></textarea>
         <div id="statusBar">
@@ -528,7 +545,7 @@
       document.getElementById("chapterTitleInput").value = ch.title || "";
       document.getElementById("chapterLabel").textContent = "Chapter " + (index + 1);
 
-      document.getElementById("textEditor").value = ch.text || "";
+      document.getElementById("textEditor").innerHTML = ch.text || "";
       document.getElementById("charactersEditor").value = ch.characters || "";
       document.getElementById("notesEditor").value = ch.notes || "";
 
@@ -538,10 +555,14 @@
     function updateWordCount() {
       const ch = getActiveChapter();
       if (!ch) return;
+
       const text = ch.text || "";
-      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      const plain = text.replace(/<[^>]+>/g, " ");
+      const words = plain.trim().split(/\s+/).filter(Boolean).length;
+
       document.getElementById("wordCount").textContent = words + " words";
     }
+
 
     function switchTab(tabName) {
       const tabs = document.querySelectorAll(".tab");
@@ -637,13 +658,13 @@
 
       document.getElementById("textEditor").addEventListener("input", (e) => {
         const ch = getActiveChapter();
-        if (!ch) return;
-        ch.text = e.target.value;
+        ch.text = e.target.innerHTML;
         setSaveStatus("Unsaved…");
         updateWordCount();
         debounceSave();
         renderSidebar();
       });
+
 
       document.getElementById("charactersEditor").addEventListener("input", (e) => {
         const ch = getActiveChapter();
@@ -699,6 +720,20 @@
         createProject(name);
       });
     }
+
+    function exec(cmd, value = null) {
+      document.execCommand(cmd, false, value);
+      document.getElementById("textEditor").dispatchEvent(new Event("input"));
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === "b") { exec("bold"); e.preventDefault(); }
+        if (e.key === "i") { exec("italic"); e.preventDefault(); }
+        if (e.key === "u") { exec("underline"); e.preventDefault(); }
+      }
+    });
+
 
     let saveTimer = null;
     function debounceSave() {
