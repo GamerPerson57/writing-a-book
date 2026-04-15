@@ -235,24 +235,26 @@
       font-size: 13px;
     }
 
-    /* Book-like page */
+    /* Multi-page layout */
     #pageContainer {
       flex: 1;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
       padding: 20px 0;
       overflow-y: auto;
       background: #f3f4f6;
     }
-    #page {
+    .page {
       background: #ffffff;
-      width: 880px; /* medium width */
-      min-height: calc(100vh - 160px);
+      width: 880px;
+      min-height: 950px; /* paperback-ish height */
       padding: 60px 70px;
       box-shadow: 0 0 12px rgba(0,0,0,0.12);
       border-radius: 4px;
+      margin-bottom: 24px;
     }
-    #textEditor {
+    .page-content {
       max-width: 100%;
       margin: 0 auto;
       line-height: 1.6;
@@ -262,14 +264,19 @@
       word-wrap: break-word;
     }
 
+    /* Hidden master editor (single source of truth) */
+    #textEditor {
+      display: none;
+    }
+
     /* Rich text extras */
-    #textEditor blockquote {
+    .page-content blockquote {
       border-left: 4px solid #ccc;
       padding-left: 10px;
       margin-left: 0;
       color: #555;
     }
-    #textEditor pre {
+    .page-content pre {
       background: #f4f4f4;
       padding: 8px;
       border-radius: 4px;
@@ -411,12 +418,11 @@
           <button id="strikeBtn"><s>S</s></button>
         </div>
 
-        <!-- Book-like page for manuscript -->
-        <div id="pageContainer">
-          <div id="page">
-            <div id="textEditor" contenteditable="true" spellcheck="true"></div>
-          </div>
-        </div>
+        <!-- Multi-page manuscript view -->
+        <div id="pageContainer"></div>
+
+        <!-- Hidden master editor (single source of truth) -->
+        <div id="textEditor" contenteditable="true" spellcheck="true"></div>
 
         <!-- Other tabs -->
         <textarea id="charactersEditor" placeholder="Character sheets, arcs, relationships..."></textarea>
@@ -607,7 +613,10 @@
       document.getElementById("chapterTitleInput").value = ch.title || "";
       document.getElementById("chapterLabel").textContent = "Chapter " + (index + 1);
 
-      document.getElementById("textEditor").innerHTML = ch.text || "";
+      const master = document.getElementById("textEditor");
+      master.innerHTML = ch.text || "";
+
+      renderPagesFromContent(ch.text || "");
       document.getElementById("charactersEditor").value = ch.characters || "";
       document.getElementById("notesEditor").value = ch.notes || "";
 
@@ -651,53 +660,141 @@
       }
     }
 
+    /* --- Pagination (approximate hard pagination) --- */
+
+    function renderPagesFromContent(html) {
+      const container = document.getElementById("pageContainer");
+      container.innerHTML = "";
+
+      // Simple heuristic: split by paragraphs into chunks
+      const temp = document.createElement("div");
+      temp.innerHTML = html || "";
+      const nodes = Array.from(temp.childNodes);
+
+      const PAGE_CHAR_TARGET = 2200; // tweak for more/less text per page
+      let currentPage = createPage();
+      let currentLength = 0;
+
+      nodes.forEach(node => {
+        const clone = node.cloneNode(true);
+        currentPage.content.appendChild(clone);
+
+        const text = clone.textContent || "";
+        currentLength += text.length;
+
+        if (currentLength > PAGE_CHAR_TARGET) {
+          currentPage = createPage();
+          currentLength = 0;
+        }
+      });
+
+      if (!container.firstChild) {
+        createPage(); // ensure at least one page
+      }
+
+      // Make pages editable and sync back
+      container.querySelectorAll(".page-content").forEach(pageEl => {
+        pageEl.contentEditable = "true";
+        pageEl.spellcheck = true;
+        pageEl.addEventListener("input", syncPagesToMaster);
+      });
+    }
+
+    function createPage() {
+      const container = document.getElementById("pageContainer");
+      const page = document.createElement("div");
+      page.className = "page";
+      const content = document.createElement("div");
+      content.className = "page-content";
+      page.appendChild(content);
+      container.appendChild(page);
+      return { page, content };
+    }
+
+    function syncPagesToMaster() {
+      const pages = Array.from(document.querySelectorAll(".page-content"));
+      const combined = pages.map(p => p.innerHTML).join("<br><br>");
+      const master = document.getElementById("textEditor");
+      master.innerHTML = combined;
+
+      const ch = getActiveChapter();
+      if (!ch) return;
+      ch.text = combined;
+      setSaveStatus("Unsaved…");
+      updateWordCount();
+      debounceSave();
+      renderSidebar();
+    }
+
+    function getActivePageEditor() {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return document.querySelector(".page-content");
+      let node = sel.anchorNode;
+      while (node && !(node.classList && node.classList.contains("page-content"))) {
+        node = node.parentNode;
+      }
+      return node || document.querySelector(".page-content");
+    }
+
     function exec(cmd, value = null) {
+      const editor = getActivePageEditor();
+      if (!editor) return;
+      editor.focus();
       document.execCommand(cmd, false, value);
-      document.getElementById("textEditor").dispatchEvent(new Event("input"));
+      syncPagesToMaster();
     }
 
     function applyParagraphStyle(tag) {
+      const editor = getActivePageEditor();
+      if (!editor) return;
+      editor.focus();
       document.execCommand("formatBlock", false, tag);
-      document.getElementById("textEditor").dispatchEvent(new Event("input"));
+      syncPagesToMaster();
     }
 
     function setupFormattingControls() {
-      const editor = document.getElementById("textEditor");
-
       const savedFont = localStorage.getItem("nw_fontFamily") || '"Merriweather", serif';
       const savedSize = localStorage.getItem("nw_fontSize") || "18px";
       const savedAlign = localStorage.getItem("nw_textAlign") || "left";
       const savedSpacing = localStorage.getItem("nw_lineSpacing") || "1.6";
 
-      editor.style.fontFamily = savedFont;
-      editor.style.fontSize = savedSize;
-      editor.style.textAlign = savedAlign;
-      editor.style.lineHeight = savedSpacing;
-
       document.getElementById("fontFamily").value = savedFont;
       document.getElementById("fontSize").value = savedSize;
       document.getElementById("lineSpacing").value = savedSpacing;
 
+      function applyToPages(fn) {
+        document.querySelectorAll(".page-content").forEach(fn);
+      }
+
+      applyToPages(el => {
+        el.style.fontFamily = savedFont;
+        el.style.fontSize = savedSize;
+        el.style.textAlign = savedAlign;
+        el.style.lineHeight = savedSpacing;
+      });
+
       document.getElementById("fontFamily").addEventListener("change", e => {
-        editor.style.fontFamily = e.target.value;
-        localStorage.setItem("nw_fontFamily", e.target.value);
+        const val = e.target.value;
+        applyToPages(el => el.style.fontFamily = val);
+        localStorage.setItem("nw_fontFamily", val);
       });
 
       document.getElementById("fontSize").addEventListener("change", e => {
-        editor.style.fontSize = e.target.value;
-        localStorage.setItem("nw_fontSize", e.target.value);
+        const val = e.target.value;
+        applyToPages(el => el.style.fontSize = val);
+        localStorage.setItem("nw_fontSize", val);
       });
 
       document.getElementById("lineSpacing").addEventListener("change", e => {
         const spacing = e.target.value;
-        editor.style.lineHeight = spacing;
+        applyToPages(el => el.style.lineHeight = spacing);
         localStorage.setItem("nw_lineSpacing", spacing);
       });
 
       document.querySelectorAll("#formatToolbar button[data-align]").forEach(btn => {
         btn.addEventListener("click", () => {
           const align = btn.dataset.align;
-          editor.style.textAlign = align;
+          applyToPages(el => el.style.textAlign = align);
           localStorage.setItem("nw_textAlign", align);
         });
       });
@@ -744,16 +841,6 @@
         if (!ch) return;
         ch.title = e.target.value;
         setSaveStatus("Unsaved…");
-        debounceSave();
-        renderSidebar();
-      });
-
-      document.getElementById("textEditor").addEventListener("input", (e) => {
-        const ch = getActiveChapter();
-        if (!ch) return;
-        ch.text = e.target.innerHTML;
-        setSaveStatus("Unsaved…");
-        updateWordCount();
         debounceSave();
         renderSidebar();
       });
@@ -829,7 +916,6 @@
 
     // Init
     setupEvents();
-    setupFormattingControls();
 
     const active = localStorage.getItem("novelWriter_activeProject");
     if (!active) {
@@ -837,6 +923,10 @@
     } else {
       openProject(active);
     }
+
+    // Formatting controls need pages present, so re-run after first render
+    // We hook into a small delay to let pages render
+    setTimeout(setupFormattingControls, 500);
   </script>
 </body>
 </html>
