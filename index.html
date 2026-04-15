@@ -264,6 +264,13 @@
       word-wrap: break-word;
     }
 
+    /* First-line indent class (only p) */
+    .first-line-indent p {
+      text-indent: 2em;
+      margin-top: 0;
+      margin-bottom: 1em;
+    }
+
     /* Hidden master editor (single source of truth) */
     #textEditor {
       display: none;
@@ -320,14 +327,6 @@
       font-size: 13px;
       font-family: inherit;
     }
-
-    .first-line-indent p {
-      text-indent: 2em;
-      margin-top: 0;
-      margin-bottom: 1em;
-    }
-
-
   </style>
 </head>
 <body>
@@ -415,8 +414,6 @@
             <option value="pre">Code Block</option>
           </select>
 
-          <button id="firstLineIndentBtn">Indent ¶</button>
-          
           <button data-align="left">Left</button>
           <button data-align="center">Center</button>
           <button data-align="right">Right</button>
@@ -426,6 +423,8 @@
           <button id="italicBtn"><i>I</i></button>
           <button id="underlineBtn"><u>U</u></button>
           <button id="strikeBtn"><s>S</s></button>
+
+          <button id="firstLineIndentBtn">Indent ¶</button>
         </div>
 
         <!-- Multi-page manuscript view -->
@@ -615,6 +614,37 @@
       });
     }
 
+    function normalizeHtmlToParagraphs(html) {
+      if (!html || !html.trim()) return "";
+      if (html.includes("<p")) return html;
+
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+
+      // If there are already block elements, just wrap text nodes
+      const hasBlocks = temp.querySelector("div, h1, h2, h3, blockquote, pre, ul, ol");
+      if (hasBlocks) {
+        const result = [];
+        temp.childNodes.forEach(node => {
+          if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+            result.push("<p>" + node.textContent.trim() + "</p>");
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            result.push(node.outerHTML);
+          }
+        });
+        return result.join("");
+      }
+
+      // Simple split on double <br> as paragraphs
+      const raw = temp.innerHTML;
+      const parts = raw
+        .split(/<br\s*\/?>\s*<br\s*\/?>/i)
+        .map(s => s.replace(/<br\s*\/?>/gi, " ").trim())
+        .filter(Boolean);
+
+      return parts.map(p => "<p>" + p + "</p>").join("");
+    }
+
     function renderEditor() {
       const ch = getActiveChapter();
       if (!ch) return;
@@ -623,10 +653,14 @@
       document.getElementById("chapterTitleInput").value = ch.title || "";
       document.getElementById("chapterLabel").textContent = "Chapter " + (index + 1);
 
-      const master = document.getElementById("textEditor");
-      master.innerHTML = ch.text || "";
+      // Normalize existing content into <p> tags
+      const normalized = normalizeHtmlToParagraphs(ch.text || "");
+      ch.text = normalized;
 
-      renderPagesFromContent(ch.text || "");
+      const master = document.getElementById("textEditor");
+      master.innerHTML = normalized;
+
+      renderPagesFromContent(normalized);
       document.getElementById("charactersEditor").value = ch.characters || "";
       document.getElementById("notesEditor").value = ch.notes || "";
 
@@ -676,7 +710,6 @@
       const container = document.getElementById("pageContainer");
       container.innerHTML = "";
 
-      // Simple heuristic: split by paragraphs into chunks
       const temp = document.createElement("div");
       temp.innerHTML = html || "";
       const nodes = Array.from(temp.childNodes);
@@ -702,12 +735,14 @@
         createPage(); // ensure at least one page
       }
 
-      // Make pages editable and sync back
       container.querySelectorAll(".page-content").forEach(pageEl => {
         pageEl.contentEditable = "true";
         pageEl.spellcheck = true;
         pageEl.addEventListener("input", syncPagesToMaster);
       });
+
+      // Re-apply formatting preferences (font, spacing, indent)
+      applyFormattingPreferencesToPages();
     }
 
     function createPage() {
@@ -723,7 +758,7 @@
 
     function syncPagesToMaster() {
       const pages = Array.from(document.querySelectorAll(".page-content"));
-      const combined = pages.map(p => p.innerHTML).join("<br><br>");
+      const combined = pages.map(p => p.innerHTML).join("");
       const master = document.getElementById("textEditor");
       master.innerHTML = combined;
 
@@ -762,20 +797,51 @@
       syncPagesToMaster();
     }
 
-    function setupFormattingControls() {
+    function applyFirstLineIndent(enabled) {
+      const pages = document.querySelectorAll(".page-content");
+
+      pages.forEach(page => {
+        if (enabled) {
+          page.classList.add("first-line-indent");
+        } else {
+          page.classList.remove("first-line-indent");
+        }
+      });
+
+      localStorage.setItem("nw_firstLineIndent", enabled ? "1" : "0");
+      syncPagesToMaster();
+    }
+
+    function applyFormattingPreferencesToPages() {
       const savedFont = localStorage.getItem("nw_fontFamily") || '"Merriweather", serif';
       const savedSize = localStorage.getItem("nw_fontSize") || "18px";
       const savedAlign = localStorage.getItem("nw_textAlign") || "left";
       const savedSpacing = localStorage.getItem("nw_lineSpacing") || "1.6";
       const indentEnabled = localStorage.getItem("nw_firstLineIndent") === "1";
-      
-      applyFirstLineIndent(indentEnabled);
 
+      const pages = document.querySelectorAll(".page-content");
+      pages.forEach(el => {
+        el.style.fontFamily = savedFont;
+        el.style.fontSize = savedSize;
+        el.style.textAlign = savedAlign;
+        el.style.lineHeight = savedSpacing;
+        if (indentEnabled) {
+          el.classList.add("first-line-indent");
+        } else {
+          el.classList.remove("first-line-indent");
+        }
+      });
+    }
+
+    function setupFormattingControls() {
+      const savedFont = localStorage.getItem("nw_fontFamily") || '"Merriweather", serif';
+      const savedSize = localStorage.getItem("nw_fontSize") || "18px";
+      const savedAlign = localStorage.getItem("nw_textAlign") || "left";
+      const savedSpacing = localStorage.getItem("nw_lineSpacing") || "1.6";
 
       document.getElementById("fontFamily").value = savedFont;
       document.getElementById("fontSize").value = savedSize;
       document.getElementById("lineSpacing").value = savedSpacing;
-      
 
       function applyToPages(fn) {
         document.querySelectorAll(".page-content").forEach(fn);
@@ -788,22 +854,28 @@
         el.style.lineHeight = savedSpacing;
       });
 
+      const indentEnabled = localStorage.getItem("nw_firstLineIndent") === "1";
+      applyFirstLineIndent(indentEnabled);
+
       document.getElementById("fontFamily").addEventListener("change", e => {
         const val = e.target.value;
         applyToPages(el => el.style.fontFamily = val);
         localStorage.setItem("nw_fontFamily", val);
+        syncPagesToMaster();
       });
 
       document.getElementById("fontSize").addEventListener("change", e => {
         const val = e.target.value;
         applyToPages(el => el.style.fontSize = val);
         localStorage.setItem("nw_fontSize", val);
+        syncPagesToMaster();
       });
 
       document.getElementById("lineSpacing").addEventListener("change", e => {
         const spacing = e.target.value;
         applyToPages(el => el.style.lineHeight = spacing);
         localStorage.setItem("nw_lineSpacing", spacing);
+        syncPagesToMaster();
       });
 
       document.querySelectorAll("#formatToolbar button[data-align]").forEach(btn => {
@@ -811,6 +883,7 @@
           const align = btn.dataset.align;
           applyToPages(el => el.style.textAlign = align);
           localStorage.setItem("nw_textAlign", align);
+          syncPagesToMaster();
         });
       });
 
@@ -823,11 +896,33 @@
       document.getElementById("underlineBtn").addEventListener("click", () => exec("underline"));
       document.getElementById("strikeBtn").addEventListener("click", () => exec("strikeThrough"));
 
+      document.getElementById("firstLineIndentBtn").addEventListener("click", () => {
+        const current = localStorage.getItem("nw_firstLineIndent") === "1";
+        applyFirstLineIndent(!current);
+      });
+
       document.addEventListener("keydown", (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          if (e.key === "b" || e.key === "B") { exec("bold"); e.preventDefault(); }
-          if (e.key === "i" || e.key === "I") { exec("italic"); e.preventDefault(); }
-          if (e.key === "u" || e.key === "U") { exec("underline"); e.preventDefault(); }
+        const editor = getActivePageEditor();
+        if (!editor || !editor.classList.contains("page-content")) return;
+
+        // Tab to indent/outdent (pages only)
+        if (e.key === "Tab") {
+          e.preventDefault();
+          if (e.shiftKey) {
+            document.execCommand("outdent");
+          } else {
+            document.execCommand("indent");
+          }
+          syncPagesToMaster();
+          return;
+        }
+
+        // Enter: ensure new paragraph is <p> (auto-wrap) and keep indent behavior
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          document.execCommand("insertParagraph");
+          document.execCommand("formatBlock", false, "p");
+          syncPagesToMaster();
         }
       });
     }
@@ -921,49 +1016,6 @@
       });
     }
 
-    function applyFirstLineIndent(enabled) {
-      const pages = document.querySelectorAll(".page-content");
-
-      pages.forEach(page => {
-        if (enabled) {
-          page.classList.add("first-line-indent");
-        } else {
-          page.classList.remove("first-line-indent");
-        }
-      });
-
-      // Save preference
-      localStorage.setItem("nw_firstLineIndent", enabled ? "1" : "0");
-
-      // Sync back to master
-      syncPagesToMaster();
-    } 
-
-    document.getElementById("firstLineIndentBtn").addEventListener("click", () => {
-      const current = localStorage.getItem("nw_firstLineIndent") === "1";
-      applyFirstLineIndent(!current);
-    });
-
-    document.addEventListener("keydown", e => {
-      const editor = getActivePageEditor();
-      if (!editor) return;
-
-      if (e.key === "Tab") {
-        e.preventDefault();
-
-        if (e.shiftKey) {
-          document.execCommand("outdent");
-        } else {
-          document.execCommand("indent");
-        }
-
-        syncPagesToMaster();
-      }
-    });
-
-
-
-
     let saveTimer = null;
     function debounceSave() {
       if (saveTimer) clearTimeout(saveTimer);
@@ -982,8 +1034,6 @@
       openProject(active);
     }
 
-    // Formatting controls need pages present, so re-run after first render
-    // We hook into a small delay to let pages render
     setTimeout(setupFormattingControls, 500);
   </script>
 </body>
