@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Novel Writer</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      height: 100vh;
+      display: flex;
+      color: #222;
+    }
+    
+    #lineSpacing {
+        padding: 4px 6px;
+        font-size: 13px;
+    }
+
+    #formatToolbar {
+        display: flex;
+        gap: 8px;
+        padding: 8px 12px;
+        border-bottom: 1px solid #ddd;
+        background: #f3f3f3;
+    }
+
+    #formatToolbar select,
+    #formatToolbar button {
+        padding: 4px 6px;
+        font-size: 13px;
+    }
+
+    #formatToolbar button {
+        cursor: pointer;
+        border: 1px solid #ccc;
+        background: white;
+        border-radius: 4px;
+    }
+
+    #formatToolbar button:hover {
+        background: #e8e8e8;
+    }
+
+    #sidebar {
+      width: 260px;
+      border-right: 1px solid #ddd;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fafafa;
+    }
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 8px;
+    }
+    h2 {
+      font-size: 14px;
+      margin: 0 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #666;
+    }
+    button {
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background: #f5f5f5;
+      padding: 4px 8px;
+      font-size: 13px;
+    }
+    button.primary {
+      background: #2563eb;
+      border-color: #1d4ed8;
+      color: white;
+    }
+    button.small {
+      font-size: 11px;
+      padding: 2px 6px;
+    }
+    input, textarea {
+      font-family: inherit;
+      font-size: 14px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    #projectTitle {
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-bottom: 1px solid transparent;
+      padding: 2px 0;
+      background: transparent;
+      width: 100%;
+    }
+    #projectTitle:focus {
+      outline: none;
+      border-bottom-color: #2563eb;
+    }
+    .section {
+      border-top: 1px solid #e5e5e5;
+      padding-top: 8px;
+    }
+    #chaptersList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 40vh;
+      overflow-y: auto;
+      border-radius: 4px;
+      border: 1px solid #e5e5e5;
+      background: white;
+    }
+    #chaptersList li {
+      padding: 6px 8px;
+      border-bottom: 1px solid #f1f1f1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    #chaptersList li:last-child {
+      border-bottom: none;
+    }
+    #chaptersList li.active {
+      background: #e0edff;
+    }
+    #chaptersList span.title {
+      flex: 1;
+      margin-right: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      background: #f9fafb;
+    }
+    .tab {
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      border-right: 1px solid #e5e5e5;
+    }
+    .tab.active {
+      background: white;
+      border-bottom: 2px solid #2563eb;
+      font-weight: 600;
+    }
+    #editorArea {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #chapterHeader {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #chapterTitleInput {
+      flex: 1;
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    #textEditor, #charactersEditor, #notesEditor {
+      flex: 1;
+      width: 100%;
+      border: none;
+      padding: 10px 12px;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+    }
+    #statusBar {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-top: 1px solid #eee;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      background: #fafafa;
+    }
+    #meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #meta textarea {
+      width: 100%;
+      min-height: 60px;
+      resize: vertical;
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 13px;
+
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <div>
+      <h1>Novel Writer</h1>
+      <input id="projectTitle" placeholder="Untitled Project" />
+    </div>
+
+    <div class="section">
+      <h2>Chapters</h2>
+      <ul id="chaptersList"></ul>
+      <div style="margin-top: 6px; display: flex; gap: 6px;">
+        <button id="addChapterBtn" class="primary small">+ Chapter</button>
+        <button id="deleteChapterBtn" class="small">Delete</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Story Notes</h2>
+      <div id="meta">
+        <textarea id="storyPremise" placeholder="Premise / logline"></textarea>
+        <textarea id="storySynopsis" placeholder="Short synopsis"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="tabs">
+      <div class="tab active" data-tab="manuscript">Manuscript</div>
+      <div class="tab" data-tab="characters">Characters</div>
+      <div class="tab" data-tab="notes">Notes</div>
+    </div>
+
+    <div id="editorArea">
+      <div id="chapterHeader">
+        <input id="chapterTitleInput" placeholder="Chapter title" />
+        <span id="chapterLabel"></span>
+      </div>
+      <textarea id="textEditor" spellcheck="true"></textarea>
+      <div id="formatToolbar">
+        <select id="fontFamily">
+            <option value="serif">Serif</option>
+            <option value="sans-serif" selected>Sans‑serif</option>
+            <option value="monospace">Monospace</option>
+        </select>
+
+        <select id="fontSize">
+            <option value="14px">14</option>
+            <option value="16px" selected>16</option>
+            <option value="18px">18</option>
+            <option value="20px">20</option>
+            <option value="24px">24</option>
+        </select>
+
+        <select id="lineSpacing">
+            <option value="1.2">1.2</option>
+            <option value="1.4">1.4</option>
+            <option value="1.6" selected>1.6</option>
+            <option value="1.8">1.8</option>
+            <option value="2.0">2.0</option>
+        </select>
+
+        <button data-align="left">Left</button>
+        <button data-align="center">Center</button>
+        <button data-align="right">Right</button>
+        <button data-align="justify">Justify</button>
+    </div>
+
+      <textarea id="charactersEditor" style="display:none;" placeholder="Character sheets, arcs, relationships..."></textarea>
+      <textarea id="notesEditor" style="display:none;" placeholder="Worldbuilding, loose ideas, research notes..."></textarea>
+      <div id="statusBar">
+        <span id="wordCount">0 words</span>
+        <span id="saveStatus">Saved</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "novelWriterProject_v1";
+
+    let project = {
+      title: "My Novel",
+      premise: "",
+      synopsis: "",
+      chapters: [],
+      activeChapterId: null
+    };
+
+    function loadProject() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          project = JSON.parse(raw);
+        } catch (e) {
+          console.error("Failed to parse project, using default", e);
+        }
+      }
+      if (!project.chapters || project.chapters.length === 0) {
+        const first = createChapter("Chapter 1");
+        project.chapters.push(first);
+        project.activeChapterId = first.id;
+        saveProject();
+      }
+    }
+
+    function saveProject() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+      setSaveStatus("Saved");
+    }
+
+    function setSaveStatus(text) {
+      const el = document.getElementById("saveStatus");
+      el.textContent = text;
+    }
+
+    function createChapter(title) {
+      return {
+        id: "ch_" + Date.now() + "_" + Math.random().toString(16).slice(2),
+        title: title || "Untitled Chapter",
+        text: "",
+        characters: "",
+        notes: ""
+      };
+    }
+
+    function getActiveChapter() {
+      return project.chapters.find(c => c.id === project.activeChapterId) || project.chapters[0];
+    }
+
+    function renderSidebar() {
+      document.getElementById("projectTitle").value = project.title || "";
+      document.getElementById("storyPremise").value = project.premise || "";
+      document.getElementById("storySynopsis").value = project.synopsis || "";
+
+      const ul = document.getElementById("chaptersList");
+      ul.innerHTML = "";
+      project.chapters.forEach((ch, index) => {
+        const li = document.createElement("li");
+        li.dataset.id = ch.id;
+        if (ch.id === project.activeChapterId) li.classList.add("active");
+
+        const spanTitle = document.createElement("span");
+        spanTitle.className = "title";
+        spanTitle.textContent = (index + 1) + ". " + (ch.title || "Untitled");
+
+        const wc = document.createElement("span");
+        wc.style.fontSize = "11px";
+        wc.style.color = "#777";
+        wc.textContent = (ch.text || "").trim().split(/\s+/).filter(Boolean).length || 0;
+
+        li.appendChild(spanTitle);
+        li.appendChild(wc);
+
+        li.addEventListener("click", () => {
+          project.activeChapterId = ch.id;
+          saveProject();
+          renderSidebar();
+          renderEditor();
+        });
+
+        ul.appendChild(li);
+      });
+    }
+
+    function renderEditor() {
+      const ch = getActiveChapter();
+      if (!ch) return;
+
+      const index = project.chapters.findIndex(c => c.id === ch.id);
+      document.getElementById("chapterTitleInput").value = ch.title || "";
+      document.getElementById("chapterLabel").textContent = "Chapter " + (index + 1);
+
+      document.getElementById("textEditor").value = ch.text || "";
+      document.getElementById("charactersEditor").value = ch.characters || "";
+      document.getElementById("notesEditor").value = ch.notes || "";
+
+      updateWordCount();
+    }
+
+    function updateWordCount() {
+      const ch = getActiveChapter();
+      if (!ch) return;
+      const text = ch.text || "";
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      document.getElementById("wordCount").textContent = words + " words";
+    }
+
+    function switchTab(tabName) {
+      const tabs = document.querySelectorAll(".tab");
+      tabs.forEach(t => {
+        t.classList.toggle("active", t.dataset.tab === tabName);
+      });
+
+      const manuscript = document.getElementById("textEditor");
+      const chars = document.getElementById("charactersEditor");
+      const notes = document.getElementById("notesEditor");
+
+      manuscript.style.display = tabName === "manuscript" ? "block" : "none";
+      chars.style.display = tabName === "characters" ? "block" : "none";
+      notes.style.display = tabName === "notes" ? "block" : "none";
+    }
+
+    function setupEvents() {
+      document.getElementById("projectTitle").addEventListener("input", (e) => {
+        project.title = e.target.value;
+        setSaveStatus("Unsaved…");
+        debounceSave();
+      });
+
+      document.getElementById("storyPremise").addEventListener("input", (e) => {
+        project.premise = e.target.value;
+        setSaveStatus("Unsaved…");
+        debounceSave();
+      });
+
+      document.getElementById("storySynopsis").addEventListener("input", (e) => {
+        project.synopsis = e.target.value;
+        setSaveStatus("Unsaved…");
+        debounceSave();
+      });
+
+      document.getElementById("chapterTitleInput").addEventListener("input", (e) => {
+        const ch = getActiveChapter();
+        if (!ch) return;
+        ch.title = e.target.value;
+        setSaveStatus("Unsaved…");
+        debounceSave();
+        renderSidebar();
+      });
+
+      document.getElementById("textEditor").addEventListener("input", (e) => {
+        const ch = getActiveChapter();
+        if (!ch) return;
+        ch.text = e.target.value;
+        setSaveStatus("Unsaved…");
+        updateWordCount();
+        debounceSave();
+        renderSidebar();
+      });
+
+      document.getElementById("charactersEditor").addEventListener("input", (e) => {
+        const ch = getActiveChapter();
+        if (!ch) return;
+        ch.characters = e.target.value;
+        setSaveStatus("Unsaved…");
+        debounceSave();
+      });
+
+      document.getElementById("notesEditor").addEventListener("input", (e) => {
+        const ch = getActiveChapter();
+        if (!ch) return;
+        ch.notes = e.target.value;
+        setSaveStatus("Unsaved…");
+        debounceSave();
+      });
+
+      document.getElementById("addChapterBtn").addEventListener("click", () => {
+        const num = project.chapters.length + 1;
+        const ch = createChapter("Chapter " + num);
+        project.chapters.push(ch);
+        project.activeChapterId = ch.id;
+        saveProject();
+        renderSidebar();
+        renderEditor();
+      });
+
+      document.getElementById("deleteChapterBtn").addEventListener("click", () => {
+        if (project.chapters.length <= 1) {
+          alert("You need at least one chapter.");
+          return;
+        }
+        const ch = getActiveChapter();
+        if (!ch) return;
+        if (!confirm("Delete \"" + (ch.title || "this chapter") + "\"?")) return;
+
+        project.chapters = project.chapters.filter(c => c.id !== ch.id);
+        project.activeChapterId = project.chapters[0].id;
+        saveProject();
+        renderSidebar();
+        renderEditor();
+      });
+
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+          switchTab(tab.dataset.tab);
+        });
+      });
+    }
+
+    function setupFormattingControls() {
+        const editor = document.getElementById("textEditor");
+
+        // Load saved formatting
+        const savedFont = localStorage.getItem("nw_fontFamily") || "sans-serif";
+        const savedSize = localStorage.getItem("nw_fontSize") || "16px";
+        const savedAlign = localStorage.getItem("nw_textAlign") || "left";
+
+        editor.style.fontFamily = savedFont;
+        editor.style.fontSize = savedSize;
+        editor.style.textAlign = savedAlign;
+
+        document.getElementById("fontFamily").value = savedFont;
+        document.getElementById("fontSize").value = savedSize;
+
+        // Font family
+        document.getElementById("fontFamily").addEventListener("change", e => {
+            editor.style.fontFamily = e.target.value;
+            localStorage.setItem("nw_fontFamily", e.target.value);
+        });
+
+        // Font size
+        document.getElementById("fontSize").addEventListener("change", e => {
+            editor.style.fontSize = e.target.value;
+            localStorage.setItem("nw_fontSize", e.target.value);
+        });
+
+        // Alignment buttons
+        document.querySelectorAll("#formatToolbar button").forEach(btn => {
+            btn.addEventListener("click", () => {
+            const align = btn.dataset.align;
+            editor.style.textAlign = align;
+            localStorage.setItem("nw_textAlign", align);
+            });
+        });
+    }
+
+    setupFormattingControls();
+
+    function setupLineSpacingControl() {
+        const editor = document.getElementById("textEditor");
+
+        // Load saved spacing
+        const savedSpacing = localStorage.getItem("nw_lineSpacing") || "1.6";
+        editor.style.lineHeight = savedSpacing;
+        document.getElementById("lineSpacing").value = savedSpacing;
+
+        // Update spacing on change
+        document.getElementById("lineSpacing").addEventListener("change", e => {
+            const spacing = e.target.value;
+            editor.style.lineHeight = spacing;
+            localStorage.setItem("nw_lineSpacing", spacing);
+        });
+    }
+
+    setupLineSpacingControl();
+
+
+    let saveTimer = null;
+    function debounceSave() {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        saveProject();
+      }, 600);
+    }
+
+    loadProject();
+    setupEvents();
+    renderSidebar();
+    renderEditor();
+  </script>
+</body>
+</html>
