@@ -75,6 +75,7 @@
       background: #fafafa;
     }
     #main {
+      margin-left: 260px;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -220,12 +221,19 @@
       padding: 4px 6px;
       font-size: 13px;
     }
-    #formatToolbar button {
-      cursor: pointer;
-      border: 1px solid #ccc;
-      background: white;
-      border-radius: 4px;
+    #formatToolbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #ddd;
+      background: #f3f3f3;
+      align-items: center;
+      flex-wrap: wrap;
     }
+
     #formatToolbar button:hover {
       background: #e8e8e8;
     }
@@ -327,6 +335,22 @@
       font-size: 13px;
       font-family: inherit;
     }
+
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid #ddd;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fafafa;
+    }
+
   </style>
 </head>
 <body>
