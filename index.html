@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <title>Novel Writer Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Merriweather", serif;
       height: 100vh;
       display: flex;
       color: #222;
+      background: #f3f4f6;
     }
 
     /* Project manager */
@@ -19,7 +21,7 @@
       width: 100%;
       max-width: 700px;
       margin: 0 auto;
-      display: flex;
+      display: none;
       flex-direction: column;
       gap: 12px;
     }
@@ -35,6 +37,7 @@
       border-radius: 4px;
       max-height: 50vh;
       overflow-y: auto;
+      background: #ffffff;
     }
     #projectList li {
       padding: 8px 10px;
@@ -54,6 +57,7 @@
       border: 1px solid #ccc;
       width: 60%;
       margin-right: 6px;
+      font-family: inherit;
     }
 
     /* App layout */
@@ -93,6 +97,7 @@
       background: #f5f5f5;
       padding: 4px 8px;
       font-size: 13px;
+      font-family: inherit;
     }
     button.primary {
       background: #2563eb;
@@ -103,7 +108,7 @@
       font-size: 11px;
       padding: 2px 6px;
     }
-    input, textarea {
+    input, textarea, select {
       font-family: inherit;
       font-size: 14px;
     }
@@ -189,6 +194,7 @@
       display: flex;
       gap: 8px;
       align-items: center;
+      background: #ffffff;
     }
     #chapterTitleInput {
       flex: 1;
@@ -196,6 +202,7 @@
       border-radius: 4px;
       border: 1px solid #ccc;
       font-size: 14px;
+      font-family: inherit;
     }
 
     /* Formatting toolbar */
@@ -206,6 +213,7 @@
       border-bottom: 1px solid #ddd;
       background: #f3f3f3;
       align-items: center;
+      flex-wrap: wrap;
     }
     #formatToolbar select,
     #formatToolbar button {
@@ -221,9 +229,53 @@
     #formatToolbar button:hover {
       background: #e8e8e8;
     }
-    #lineSpacing {
+    #lineSpacing,
+    #paragraphStyle {
       padding: 4px 6px;
       font-size: 13px;
+    }
+
+    /* Book-like page */
+    #pageContainer {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+      overflow-y: auto;
+      background: #f3f4f6;
+    }
+    #page {
+      background: #ffffff;
+      width: 880px; /* medium width */
+      min-height: calc(100vh - 160px);
+      padding: 60px 70px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.12);
+      border-radius: 4px;
+    }
+    #textEditor {
+      max-width: 100%;
+      margin: 0 auto;
+      line-height: 1.6;
+      font-size: 18px;
+      outline: none;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* Rich text extras */
+    #textEditor blockquote {
+      border-left: 4px solid #ccc;
+      padding-left: 10px;
+      margin-left: 0;
+      color: #555;
+    }
+    #textEditor pre {
+      background: #f4f4f4;
+      padding: 8px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9em;
     }
 
     #charactersEditor, #notesEditor {
@@ -234,15 +286,7 @@
       resize: none;
       outline: none;
       line-height: 1.5;
-    }
-
-    #textEditor {
-      flex: 1;
-      width: 100%;
-      padding: 10px 12px;
-      outline: none;
-      overflow-y: auto;
-      white-space: pre-wrap;
+      display: none;
     }
 
     #statusBar {
@@ -267,33 +311,13 @@
       border-radius: 4px;
       border: 1px solid #ccc;
       font-size: 13px;
+      font-family: inherit;
     }
-
-    #paragraphStyle {
-      padding: 4px 6px;
-      font-size: 13px;
-    }
-
-    #textEditor blockquote {
-      border-left: 4px solid #ccc;
-      padding-left: 10px;
-      margin-left: 0;
-      color: #555;
-    }
-
-    #textEditor pre {
-      background: #f4f4f4;
-      padding: 8px;
-      border-radius: 4px;
-      overflow-x: auto;
-    }
-
-
   </style>
 </head>
 <body>
   <!-- Project manager (multiple books) -->
-  <div id="projectManager" style="display:none;">
+  <div id="projectManager">
     <h1>Your Books</h1>
     <ul id="projectList"></ul>
 
@@ -304,13 +328,12 @@
   </div>
 
   <!-- Main app (single book at a time) -->
-  <div id="app" style="display:none;">
+  <div id="app">
     <div id="sidebar">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1 style="margin:0;">Novel Writer</h1>
         <button id="backToMenuBtn" class="small">Menu</button>
       </div>
-
       <input id="projectTitle" placeholder="Untitled Project" />
 
       <div class="section">
@@ -347,21 +370,21 @@
         <!-- Formatting toolbar -->
         <div id="formatToolbar">
           <select id="fontFamily">
-            <option value="serif">Serif</option>
-            <option value="sans-serif" selected>Sans-serif</option>
-            <option value="monospace">Monospace</option>
+            <option value='"Merriweather", serif' selected>Merriweather</option>
+            <option value='serif'>Serif</option>
+            <option value='sans-serif'>Sans-serif</option>
+            <option value='monospace'>Monospace</option>
           </select>
 
           <select id="fontSize">
-            <option value="14px">14</option>
-            <option value="16px" selected>16</option>
-            <option value="18px">18</option>
+            <option value="16px">16</option>
+            <option value="18px" selected>18</option>
             <option value="20px">20</option>
+            <option value="22px">22</option>
             <option value="24px">24</option>
           </select>
 
           <select id="lineSpacing">
-            <option value="1.2">1.2</option>
             <option value="1.4">1.4</option>
             <option value="1.6" selected>1.6</option>
             <option value="1.8">1.8</option>
@@ -377,23 +400,28 @@
             <option value="pre">Code Block</option>
           </select>
 
-
           <button data-align="left">Left</button>
           <button data-align="center">Center</button>
           <button data-align="right">Right</button>
           <button data-align="justify">Justify</button>
 
-          <button onclick="exec('bold')"><b>B</b></button>
-          <button onclick="exec('italic')"><i>I</i></button>
-          <button onclick="exec('underline')"><u>U</u></button>
-          <button onclick="exec('strikeThrough')"><s>S</s></button>
-
+          <button id="boldBtn"><b>B</b></button>
+          <button id="italicBtn"><i>I</i></button>
+          <button id="underlineBtn"><u>U</u></button>
+          <button id="strikeBtn"><s>S</s></button>
         </div>
 
-       <div id="textEditor" contenteditable="true" spellcheck="true"></div>
+        <!-- Book-like page for manuscript -->
+        <div id="pageContainer">
+          <div id="page">
+            <div id="textEditor" contenteditable="true" spellcheck="true"></div>
+          </div>
+        </div>
 
-        <textarea id="charactersEditor" style="display:none;" placeholder="Character sheets, arcs, relationships..."></textarea>
-        <textarea id="notesEditor" style="display:none;" placeholder="Worldbuilding, loose ideas, research notes..."></textarea>
+        <!-- Other tabs -->
+        <textarea id="charactersEditor" placeholder="Character sheets, arcs, relationships..."></textarea>
+        <textarea id="notesEditor" placeholder="Worldbuilding, loose ideas, research notes..."></textarea>
+
         <div id="statusBar">
           <span id="wordCount">0 words</span>
           <span id="saveStatus">Saved</span>
@@ -423,7 +451,7 @@
     }
 
     function showProjectManager() {
-      document.getElementById("projectManager").style.display = "block";
+      document.getElementById("projectManager").style.display = "flex";
       document.getElementById("app").style.display = "none";
       renderProjectList();
     }
@@ -552,7 +580,10 @@
         const wc = document.createElement("span");
         wc.style.fontSize = "11px";
         wc.style.color = "#777";
-        wc.textContent = (ch.text || "").trim().split(/\s+/).filter(Boolean).length || 0;
+
+        const plain = (ch.text || "").replace(/<[^>]+>/g, " ");
+        const count = plain.trim().split(/\s+/).filter(Boolean).length || 0;
+        wc.textContent = count;
 
         li.appendChild(spanTitle);
         li.appendChild(wc);
@@ -581,6 +612,7 @@
       document.getElementById("notesEditor").value = ch.notes || "";
 
       updateWordCount();
+      switchTab(document.querySelector(".tab.active").dataset.tab);
     }
 
     function updateWordCount() {
@@ -594,27 +626,46 @@
       document.getElementById("wordCount").textContent = words + " words";
     }
 
-
     function switchTab(tabName) {
       const tabs = document.querySelectorAll(".tab");
       tabs.forEach(t => {
         t.classList.toggle("active", t.dataset.tab === tabName);
       });
 
-      const manuscript = document.getElementById("textEditor");
+      const pageContainer = document.getElementById("pageContainer");
       const chars = document.getElementById("charactersEditor");
       const notes = document.getElementById("notesEditor");
 
-      manuscript.style.display = tabName === "manuscript" ? "block" : "none";
-      chars.style.display = tabName === "characters" ? "block" : "none";
-      notes.style.display = tabName === "notes" ? "block" : "none";
+      if (tabName === "manuscript") {
+        pageContainer.style.display = "flex";
+        chars.style.display = "none";
+        notes.style.display = "none";
+      } else if (tabName === "characters") {
+        pageContainer.style.display = "none";
+        chars.style.display = "block";
+        notes.style.display = "none";
+      } else if (tabName === "notes") {
+        pageContainer.style.display = "none";
+        chars.style.display = "none";
+        notes.style.display = "block";
+      }
+    }
+
+    function exec(cmd, value = null) {
+      document.execCommand(cmd, false, value);
+      document.getElementById("textEditor").dispatchEvent(new Event("input"));
+    }
+
+    function applyParagraphStyle(tag) {
+      document.execCommand("formatBlock", false, tag);
+      document.getElementById("textEditor").dispatchEvent(new Event("input"));
     }
 
     function setupFormattingControls() {
       const editor = document.getElementById("textEditor");
 
-      const savedFont = localStorage.getItem("nw_fontFamily") || "sans-serif";
-      const savedSize = localStorage.getItem("nw_fontSize") || "16px";
+      const savedFont = localStorage.getItem("nw_fontFamily") || '"Merriweather", serif';
+      const savedSize = localStorage.getItem("nw_fontSize") || "18px";
       const savedAlign = localStorage.getItem("nw_textAlign") || "left";
       const savedSpacing = localStorage.getItem("nw_lineSpacing") || "1.6";
 
@@ -643,32 +694,33 @@
         localStorage.setItem("nw_lineSpacing", spacing);
       });
 
-      document.querySelectorAll("#formatToolbar button").forEach(btn => {
+      document.querySelectorAll("#formatToolbar button[data-align]").forEach(btn => {
         btn.addEventListener("click", () => {
           const align = btn.dataset.align;
           editor.style.textAlign = align;
           localStorage.setItem("nw_textAlign", align);
         });
       });
-    }
 
-    function applyParagraphStyle(tag) {
-      // Convert selection to the chosen block type
-      document.execCommand("formatBlock", false, tag);
-      
-      // Trigger save + word count update
-      document.getElementById("textEditor").dispatchEvent(new Event("input"));
-    }
-
-
-    function setupEvents() {
-      document.getElementById("backToMenuBtn").addEventListener("click", () => {
-        // Hide the app, show the project manager
-        document.getElementById("app").style.display = "none";
-        document.getElementById("projectManager").style.display = "block";
-        renderProjectList();
+      document.getElementById("paragraphStyle").addEventListener("change", (e) => {
+        applyParagraphStyle(e.target.value);
       });
 
+      document.getElementById("boldBtn").addEventListener("click", () => exec("bold"));
+      document.getElementById("italicBtn").addEventListener("click", () => exec("italic"));
+      document.getElementById("underlineBtn").addEventListener("click", () => exec("underline"));
+      document.getElementById("strikeBtn").addEventListener("click", () => exec("strikeThrough"));
+
+      document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key === "b" || e.key === "B") { exec("bold"); e.preventDefault(); }
+          if (e.key === "i" || e.key === "I") { exec("italic"); e.preventDefault(); }
+          if (e.key === "u" || e.key === "U") { exec("underline"); e.preventDefault(); }
+        }
+      });
+    }
+
+    function setupEvents() {
       document.getElementById("projectTitle").addEventListener("input", (e) => {
         project.title = e.target.value;
         setSaveStatus("Unsaved…");
@@ -698,13 +750,13 @@
 
       document.getElementById("textEditor").addEventListener("input", (e) => {
         const ch = getActiveChapter();
+        if (!ch) return;
         ch.text = e.target.innerHTML;
         setSaveStatus("Unsaved…");
         updateWordCount();
         debounceSave();
         renderSidebar();
       });
-
 
       document.getElementById("charactersEditor").addEventListener("input", (e) => {
         const ch = getActiveChapter();
@@ -759,26 +811,13 @@
         if (!name) return alert("Enter a book title");
         createProject(name);
       });
+
+      document.getElementById("backToMenuBtn").addEventListener("click", () => {
+        document.getElementById("app").style.display = "none";
+        document.getElementById("projectManager").style.display = "flex";
+        renderProjectList();
+      });
     }
-
-    function exec(cmd, value = null) {
-      document.execCommand(cmd, false, value);
-      document.getElementById("textEditor").dispatchEvent(new Event("input"));
-    }
-
-    document.addEventListener("keydown", (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === "b") { exec("bold"); e.preventDefault(); }
-        if (e.key === "i") { exec("italic"); e.preventDefault(); }
-        if (e.key === "u") { exec("underline"); e.preventDefault(); }
-      }
-    });
-
-    document.getElementById("paragraphStyle").addEventListener("change", (e) => {
-      applyParagraphStyle(e.target.value);
-    });
-
-
 
     let saveTimer = null;
     function debounceSave() {
@@ -801,4 +840,3 @@
   </script>
 </body>
 </html>
-
