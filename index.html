@@ -944,6 +944,24 @@
       applyFirstLineIndent(!current);
     });
 
+    document.addEventListener("keydown", e => {
+      const editor = getActivePageEditor();
+      if (!editor) return;
+
+      if (e.key === "Tab") {
+        e.preventDefault();
+
+        if (e.shiftKey) {
+          document.execCommand("outdent");
+        } else {
+          document.execCommand("indent");
+        }
+
+        syncPagesToMaster();
+      }
+    });
+
+
 
 
     let saveTimer = null;
