@@ -320,6 +320,14 @@
       font-size: 13px;
       font-family: inherit;
     }
+
+    .first-line-indent p {
+      text-indent: 2em;
+      margin-top: 0;
+      margin-bottom: 1em;
+    }
+
+
   </style>
 </head>
 <body>
@@ -407,6 +415,8 @@
             <option value="pre">Code Block</option>
           </select>
 
+          <button id="firstLineIndentBtn">Indent ¶</button>
+          
           <button data-align="left">Left</button>
           <button data-align="center">Center</button>
           <button data-align="right">Right</button>
@@ -757,10 +767,15 @@
       const savedSize = localStorage.getItem("nw_fontSize") || "18px";
       const savedAlign = localStorage.getItem("nw_textAlign") || "left";
       const savedSpacing = localStorage.getItem("nw_lineSpacing") || "1.6";
+      const indentEnabled = localStorage.getItem("nw_firstLineIndent") === "1";
+      
+      applyFirstLineIndent(indentEnabled);
+
 
       document.getElementById("fontFamily").value = savedFont;
       document.getElementById("fontSize").value = savedSize;
       document.getElementById("lineSpacing").value = savedSpacing;
+      
 
       function applyToPages(fn) {
         document.querySelectorAll(".page-content").forEach(fn);
@@ -905,6 +920,31 @@
         renderProjectList();
       });
     }
+
+    function applyFirstLineIndent(enabled) {
+      const pages = document.querySelectorAll(".page-content");
+
+      pages.forEach(page => {
+        if (enabled) {
+          page.classList.add("first-line-indent");
+        } else {
+          page.classList.remove("first-line-indent");
+        }
+      });
+
+      // Save preference
+      localStorage.setItem("nw_firstLineIndent", enabled ? "1" : "0");
+
+      // Sync back to master
+      syncPagesToMaster();
+    } 
+
+    document.getElementById("firstLineIndentBtn").addEventListener("click", () => {
+      const current = localStorage.getItem("nw_firstLineIndent") === "1";
+      applyFirstLineIndent(!current);
+    });
+
+
 
     let saveTimer = null;
     function debounceSave() {
